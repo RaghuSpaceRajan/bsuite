@@ -1,5 +1,6 @@
 # Behaviour Suite for Reinforcement Learning (`bsuite`)
 
+![PyPI Python version](https://img.shields.io/pypi/pyversions/bsuite)
 ![PyPI version](https://badge.fury.io/py/bsuite.svg)
 ![pytest](https://github.com/deepmind/bsuite/workflows/pytest/badge.svg)
 
@@ -116,6 +117,22 @@ uppercase constants corresponding to the experiment name, for example:
 ```python
 sweep.DEEP_SEA
 sweep.DISCOUNTING_CHAIN
+```
+
+In addition, sequences of `bsuite_id`s with the same tag can be loaded via:
+
+```python
+from bsuite import sweep
+
+sweep.TAGS
+```
+
+The `TAGS` variable groups `bsuite` environments together by their underlying
+tag, so all the `basic` tasks or `scale` tasks can be loaded with:
+
+```python
+sweep.TAGS['basic']
+sweep.TAGS['scale']
 ```
 
 ### Loading an environment with logging included

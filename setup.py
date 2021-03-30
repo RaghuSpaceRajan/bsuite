@@ -18,16 +18,15 @@
 
 import imp
 
-from setuptools import find_packages
-from setuptools import setup
+import setuptools
 
 # Additional requirements for TensorFlow baselines, excluding OpenAI & Dopamine.
 # See baselines/README.md for more information.
 baselines_require = [
     'dm-sonnet',
     'dm-tree',
-    'tensorflow == 2.1',
-    'tensorflow_probability >= 0.8, < 0.9',
+    'tensorflow',
+    'tensorflow_probability',
     'trfl',
     'tqdm',
 ]
@@ -35,11 +34,13 @@ baselines_require = [
 # Additional requirements for JAX baselines.
 # See baselines/README.md for more information.
 baselines_jax_require = [
-    'dm-haiku @ git+git://github.com/deepmind/dm-haiku.git#egg=dm-haiku',
+    'dataclasses',
+    'dm-haiku',
     'dm-tree',
     'jax',
     'jaxlib',
-    'rlax @ git+git://github.com/deepmind/rlax.git#egg=rlax',
+    'optax',
+    'rlax',
     'tqdm',
 ]
 
@@ -55,17 +56,19 @@ testing_require = [
     'pytype',
 ]
 
-setup(
+setuptools.setup(
     name='bsuite',
     description=('Core RL Behaviour Suite. '
                  'A collection of reinforcement learning experiments.'),
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
+    url='https://github.com/deepmind/bsuite',
     author='DeepMind',
+    author_email='dm-bsuite-eng+os@google.com',
     license='Apache License, Version 2.0',
     version=imp.load_source('_metadata', 'bsuite/_metadata.py').__version__,
-    keywords='reinforcement-learning python machine learning',
-    packages=find_packages(),
+    keywords='reinforcement-learning python machine-learning',
+    packages=setuptools.find_packages(),
     install_requires=[
         'absl-py',
         'dm_env',
@@ -96,7 +99,6 @@ setup(
         'Operating System :: MacOS :: MacOS X',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
 )

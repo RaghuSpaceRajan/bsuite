@@ -44,9 +44,9 @@ from dm_env import specs
 import haiku as hk
 import jax
 from jax import lax
-from jax.experimental import optix
 import jax.numpy as jnp
 import numpy as np
+import optax
 import rlax
 
 
@@ -72,14 +72,14 @@ class BootstrappedDqn(base.Agent):
       min_replay_size: int,
       sgd_period: int,
       target_update_period: int,
-      optimizer: optix.InitUpdate,
+      optimizer: optax.GradientTransformation,
       mask_prob: float,
       noise_scale: float,
       epsilon_fn: Callable[[int], float] = lambda _: 0.,
       seed: int = 1,
   ):
     # Transform the (impure) network into a pure function.
-    network = hk.transform(network)
+    network = hk.without_apply_rng(hk.transform(network, apply_rng=True))
 
     # Define loss function, including bootstrap mask `m_t` & reward noise `z_t`.
     def loss(params: hk.Params, target_params: hk.Params,
@@ -101,7 +101,7 @@ class BootstrappedDqn(base.Agent):
 
       gradients = jax.grad(loss)(state.params, state.target_params, transitions)
       updates, new_opt_state = optimizer.update(gradients, state.opt_state)
-      new_params = optix.apply_updates(state.params, updates)
+      new_params = optax.apply_updates(state.params, updates)
 
       return TrainingState(
           params=new_params,
@@ -211,7 +211,7 @@ def default_agent(
   """Initialize a Bootstrapped DQN agent with default parameters."""
 
   # Define network.
-  prior_scale = 3.
+  prior_scale = 5.
   hidden_sizes = [50, 50]
 
   def network(inputs: jnp.ndarray) -> jnp.ndarray:
@@ -221,7 +221,7 @@ def default_agent(
     x = hk.Flatten()(inputs)
     return net(x) + prior_scale * lax.stop_gradient(prior_net(x))
 
-  optimizer = optix.adam(learning_rate=1e-3)
+  optimizer = optax.adam(learning_rate=1e-3)
   return BootstrappedDqn(
       obs_spec=obs_spec,
       action_spec=action_spec,
@@ -234,7 +234,7 @@ def default_agent(
       sgd_period=1,
       target_update_period=4,
       optimizer=optimizer,
-      mask_prob=0.5,
+      mask_prob=1.,
       noise_scale=0.,
       epsilon_fn=lambda _: 0.,
       seed=seed,

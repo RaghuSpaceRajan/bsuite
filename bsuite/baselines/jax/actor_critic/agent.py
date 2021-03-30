@@ -25,8 +25,8 @@ import dm_env
 from dm_env import specs
 import haiku as hk
 import jax
-from jax.experimental import optix
 import jax.numpy as jnp
+import optax
 import rlax
 
 Logits = jnp.ndarray
@@ -47,7 +47,7 @@ class ActorCritic(base.Agent):
       obs_spec: specs.Array,
       action_spec: specs.DiscreteArray,
       network: PolicyValueNet,
-      optimizer: optix.InitUpdate,
+      optimizer: optax.GradientTransformation,
       rng: hk.PRNGSequence,
       sequence_length: int,
       discount: float,
@@ -75,7 +75,7 @@ class ActorCritic(base.Agent):
       return actor_loss + critic_loss
 
     # Transform the loss into a pure function.
-    loss_fn = hk.transform(loss).apply
+    loss_fn = hk.without_apply_rng(hk.transform(loss, apply_rng=True)).apply
 
     # Define update function.
     @jax.jit
@@ -84,11 +84,11 @@ class ActorCritic(base.Agent):
       """Does a step of SGD over a trajectory."""
       gradients = jax.grad(loss_fn)(state.params, trajectory)
       updates, new_opt_state = optimizer.update(gradients, state.opt_state)
-      new_params = optix.apply_updates(state.params, updates)
+      new_params = optax.apply_updates(state.params, updates)
       return TrainingState(params=new_params, opt_state=new_opt_state)
 
     # Initialize network parameters and optimiser state.
-    init, forward = hk.transform(network)
+    init, forward = hk.without_apply_rng(hk.transform(network, apply_rng=True))
     dummy_observation = jnp.zeros((1, *obs_spec.shape), dtype=jnp.float32)
     initial_params = init(next(rng), dummy_observation)
     initial_opt_state = optimizer.init(initial_params)
@@ -140,7 +140,7 @@ def default_agent(obs_spec: specs.Array,
       obs_spec=obs_spec,
       action_spec=action_spec,
       network=network,
-      optimizer=optix.adam(3e-3),
+      optimizer=optax.adam(3e-3),
       rng=hk.PRNGSequence(seed),
       sequence_length=32,
       discount=0.99,
